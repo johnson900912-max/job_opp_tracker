@@ -76,6 +76,12 @@ class DashboardOut(BaseModel):
     panels: List[AspirationDashboard]
 
 
+# --- Opportunity Updates ---
+
+class UrgencyUpdate(BaseModel):
+    urgency: Literal["apply_now", "watch_space", "informational"]
+
+
 # --- Reprocessing ---
 
 class ReprocessingStatus(BaseModel):

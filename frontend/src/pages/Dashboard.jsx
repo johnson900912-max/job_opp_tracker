@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { dashboardApi } from "../api/client.js";
+import { dashboardApi, opportunitiesApi } from "../api/client.js";
 import OpportunityCard from "../components/OpportunityCard.jsx";
 import ReprocessingBanner from "../components/ReprocessingBanner.jsx";
+import ExecSummary from "../components/ExecSummary.jsx";
 
 const URGENCY_ORDER = { apply_now: 0, watch_space: 1, informational: 2 };
 
@@ -91,12 +92,12 @@ const styles = {
   }),
 };
 
-function PanelSection({ asp, opportunities }) {
+function PanelSection({ asp, opportunities, onUrgencyChange }) {
   const [open, setOpen] = useState(true);
   const count = opportunities.length;
 
   return (
-    <div style={styles.panel}>
+    <div id={`panel-${asp.id}`} style={styles.panel}>
       <div style={styles.panelHeader} onClick={() => setOpen((o) => !o)}>
         <div style={styles.panelTitle}>{asp.title}</div>
         {count > 0 && <span style={styles.panelBadge}>{count}</span>}
@@ -112,7 +113,9 @@ function PanelSection({ asp, opportunities }) {
           {count === 0 ? (
             <div style={styles.empty}>No opportunities found for this goal yet.</div>
           ) : (
-            opportunities.map((opp) => <OpportunityCard key={opp.id} opportunity={opp} />)
+            opportunities.map((opp) => (
+              <OpportunityCard key={opp.id} opportunity={opp} onUrgencyChange={onUrgencyChange} />
+            ))
           )}
         </>
       )}
@@ -136,6 +139,25 @@ export default function Dashboard({ refreshTrigger }) {
       setLoading(false);
     }
   }, []);
+
+  const handleUrgencyChange = useCallback(async (opportunityId, newUrgency) => {
+    // Optimistic update — instant UI feedback in both ExecSummary and detail panels
+    setData((prev) => ({
+      ...prev,
+      panels: prev.panels.map((panel) => ({
+        ...panel,
+        opportunities: panel.opportunities.map((opp) =>
+          opp.id === opportunityId ? { ...opp, urgency: newUrgency } : opp
+        ),
+      })),
+    }));
+    try {
+      await opportunitiesApi.updateUrgency(opportunityId, newUrgency);
+    } catch (e) {
+      console.error("Urgency update failed, reverting", e);
+      fetchDashboard();
+    }
+  }, [fetchDashboard]);
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -219,6 +241,10 @@ export default function Dashboard({ refreshTrigger }) {
 
       <ReprocessingBanner status={reprocessStatus} />
 
+      <ExecSummary panels={data.panels} onUrgencyChange={handleUrgencyChange} />
+
+      <div style={{ borderBottom: "1px solid #eee", marginBottom: "28px" }} />
+
       <div style={styles.filterBar}>
         {["all", "apply_now", "watch_space", "informational"].map((f) => (
           <button key={f} style={styles.filterBtn(urgencyFilter === f)} onClick={() => setUrgencyFilter(f)}>
@@ -228,7 +254,12 @@ export default function Dashboard({ refreshTrigger }) {
       </div>
 
       {filteredPanels.map(({ aspiration, opportunities }) => (
-        <PanelSection key={aspiration.id} asp={aspiration} opportunities={opportunities} />
+        <PanelSection
+          key={aspiration.id}
+          asp={aspiration}
+          opportunities={opportunities}
+          onUrgencyChange={handleUrgencyChange}
+        />
       ))}
     </div>
   );

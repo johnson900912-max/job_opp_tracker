@@ -27,6 +27,11 @@ export const newsApi = {
   list: (page = 1) => api.get(`/news?page=${page}&limit=20`),
 };
 
+// --- Opportunities ---
+export const opportunitiesApi = {
+  updateUrgency: (id, urgency) => api.patch(`/opportunities/${id}/urgency`, { urgency }),
+};
+
 // --- Dashboard ---
 export const dashboardApi = {
   full: () => api.get("/dashboard"),

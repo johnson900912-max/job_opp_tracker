@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 
 const URGENCY_CONFIG = {
   apply_now: { label: "Apply Now", color: "#c0392b", bg: "#fde8e7" },
@@ -97,11 +97,51 @@ const styles = {
     color: "#3498db",
     textDecoration: "none",
   },
+  overrideRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    marginTop: "10px",
+    paddingTop: "10px",
+    borderTop: "1px solid #f0f0f0",
+  },
+  overrideLabel: {
+    fontSize: "11px",
+    color: "#aaa",
+    marginRight: "2px",
+    whiteSpace: "nowrap",
+  },
+  overrideBtn: (isActive, color, bg) => ({
+    padding: "3px 10px",
+    borderRadius: "20px",
+    border: `1.5px solid ${isActive ? color : "#ddd"}`,
+    background: isActive ? bg : "#fff",
+    color: isActive ? color : "#aaa",
+    fontSize: "11px",
+    fontWeight: isActive ? 700 : 400,
+    cursor: "pointer",
+    transition: "all 0.15s",
+    letterSpacing: "0.3px",
+  }),
 };
 
-export default function OpportunityCard({ opportunity }) {
+const URGENCY_BUTTONS = [
+  { value: "apply_now", label: "Apply Now" },
+  { value: "watch_space", label: "Watch" },
+  { value: "informational", label: "Info" },
+];
+
+export default function OpportunityCard({ opportunity, onUrgencyChange }) {
+  const [updating, setUpdating] = useState(false);
   const urgency = URGENCY_CONFIG[opportunity.urgency] || URGENCY_CONFIG.informational;
   const borderColor = urgency.color;
+
+  const handleOverride = async (newUrgency) => {
+    if (updating || newUrgency === opportunity.urgency || !onUrgencyChange) return;
+    setUpdating(true);
+    await onUrgencyChange(opportunity.id, newUrgency);
+    setUpdating(false);
+  };
 
   return (
     <div style={{ ...styles.card, borderLeftColor: borderColor }}>
@@ -148,6 +188,26 @@ export default function OpportunityCard({ opportunity }) {
           </span>
         )}
       </div>
+
+      {onUrgencyChange && (
+        <div style={styles.overrideRow}>
+          <span style={styles.overrideLabel}>Override:</span>
+          {URGENCY_BUTTONS.map(({ value, label }) => {
+            const cfg = URGENCY_CONFIG[value];
+            const isActive = opportunity.urgency === value;
+            return (
+              <button
+                key={value}
+                style={styles.overrideBtn(isActive, cfg.color, cfg.bg)}
+                onClick={() => handleOverride(value)}
+                disabled={updating}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
