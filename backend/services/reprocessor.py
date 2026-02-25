@@ -4,6 +4,7 @@ Background reprocessing: re-analyze all past NewsItems when aspirations change.
 import asyncio
 import logging
 from datetime import datetime
+from typing import Optional
 
 from sqlalchemy.orm import Session
 
@@ -40,7 +41,7 @@ def get_status() -> dict:
         db.close()
 
 
-async def reprocess_all(trigger_aspiration_id: int | None = None):
+async def reprocess_all(trigger_aspiration_id: Optional[int] = None):
     """
     Re-analyze all NewsItems against all current aspirations.
     If trigger_aspiration_id is given, only delete+regenerate opportunities
