@@ -3,7 +3,7 @@ from typing import List
 
 
 class Settings(BaseSettings):
-    anthropic_api_key: str
+    groq_api_key: str
     database_url: str = "sqlite:///./job_tracker.db"
     cors_origins: List[str] = ["http://localhost:5173"]
     max_content_length: int = 8000
